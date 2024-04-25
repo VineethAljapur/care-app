@@ -14,7 +14,7 @@ from flask import Flask, request, render_template, Response
 from keras.models import load_model
 
 # Custom visualization functions
-import utils
+import utils.utils as utils
 
 # Load the model
 model = load_model("model.keras")

@@ -41,6 +41,13 @@ If the analysis is finished successfuly it will load the image on your browser s
 
 This project is still being developed and we would love to have contributions from the users both in the form of suggestions under (`Issues` and `Discussions` sections) and `Pull requests`.
 
+### TODO:
+- get_percentages is hardcoded. Remove it
+- Normalize image using (X-X_mean) / (X_max - X_min + 1e-8)
+- Remove factor for bit
+- Remove np.divide step
+- Call decode_segmentation_mask is hardcoded (line 105). Remove it
+
 ## License
 
 This project is licensed under the [MIT License](LICENSE).
