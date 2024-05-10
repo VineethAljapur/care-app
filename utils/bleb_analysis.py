@@ -1,25 +1,37 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+import os
 import cv2
 import numpy as np
 import pandas as pd
+import seaborn as sns
+
 from matplotlib import pyplot as plt
 from typing import List, Dict, Any
 
-def find_blebs(image: np.ndarray, outer: bool = True) -> List[np.ndarray]:
+import skimage.filters
+import skimage.segmentation
+import skimage.measure
+
+def find_blebs(image: np.ndarray) -> List[np.ndarray]:
     """
     Find blebs in the given image.
 
     Args:
         image (np.ndarray): The input image.
-        outer (bool, optional): Flag to indicate whether to find outer blebs only. Defaults to True.
 
     Returns:
         List[np.ndarray]: List of contours representing the blebs.
     """
-    _, binary_image = cv2.threshold(image, 3, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-    contours, _ = cv2.findContours(binary_image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    
+    thresh = skimage.filters.threshold_triangle(image)
+    binary_image = (image > thresh).astype(np.uint8)
+    
+    kernel = np.ones((5, 5), np.uint8) 
+    binary_image = cv2.dilate(binary_image, kernel, iterations=1)
+    
+    contours, _ = cv2.findContours(binary_image, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
 
     return contours
 
@@ -33,17 +45,17 @@ def analyze_bleb(contour: np.ndarray) -> dict:
     Returns:
         dict: Dictionary containing the analyzed properties of the bleb.
     """
-    area: float = cv2.contourArea(contour)
-    perimeter: float = cv2.arcLength(contour, True)
+    area = cv2.contourArea(contour)
+    perimeter = cv2.arcLength(contour, True)
 
-    circularity: float = 0
+    circularity = 0
     if perimeter:
         circularity = 4 * np.pi * area / (perimeter * perimeter)
-
-    _, _, width, height = cv2.boundingRect(contour)
-
-    major_diameter: float = max(width, height)
-    minor_diameter: float = min(width, height)
+        
+    ellipse = cv2.fitEllipse(contour)
+    major_diameter, minor_diameter = ellipse[1]
+    if minor_diameter > major_diameter:
+        major_diameter, minor_diameter = minor_diameter, major_diameter
 
     return {
       "area": area,
@@ -51,6 +63,7 @@ def analyze_bleb(contour: np.ndarray) -> dict:
       "major_diameter": major_diameter,
       "minor_diameter": minor_diameter
     }
+
 
 def display_blebs(bleb_array: np.ndarray) -> None:
     """
