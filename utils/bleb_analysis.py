@@ -6,6 +6,7 @@ import cv2
 import numpy as np
 import pandas as pd
 import seaborn as sns
+import scipy.stats as stats
 
 from matplotlib import pyplot as plt
 from typing import List, Dict, Any
@@ -117,3 +118,55 @@ def write_to_excel(filename: str, data_dicts: List[Dict[str, List[Any]]], sheet_
             df_temp = pd.DataFrame(df)
             df_temp.to_excel(writer, sheet_name=sheet_names[i], index=False)
 
+
+def make_box_plot_with_significance(df: List[Dict[str, List[Any]]], df_name: str) -> None:
+    """
+    Generate a box plot with significance levels for the given data.
+
+    Args:
+        df (List[Dict[str, List[Any]]]): A list of dictionaries containing the data.
+        df_name (str): The name of the data.
+
+    Returns:
+        None
+    """
+    max_length = max(len(df[a]) for a in df)
+
+    for col in df:
+        df[col] += [np.nan] * (max_length - len(df[col]))
+
+    df_temp = pd.DataFrame(df)
+    
+    sns.boxplot(
+        x = "variable",
+        y = "value",
+        showmeans=True,   
+        data=df_temp.melt(var_name="variable", value_name="value"),
+    )
+
+    plt.xlabel("Concentration")
+    plt.grid(axis='y', linestyle='--', alpha=0.7)
+    plt.title(f"Distribution of {df_name}")
+
+    # Perform t-tests
+    for j in range(1, len(df)):
+        _, p_value = stats.ttest_ind(df_temp["control"], df_temp[df_temp.columns[j]], nan_policy='omit')
+        if p_value < 0.05:
+            if p_value < 0.01:
+                if p_value < 0.001:
+                    significance = "***"
+                else:
+                    significance = "**"
+            else:
+                significance = "*"
+        else:
+            significance = "n.s."
+        
+        # Add significance level to the plot            
+        y_max = max(max(df_temp["control"]), max(df_temp[df_temp.columns[j]]))
+        plt.text(j, y_max, significance, ha='center')
+    
+    sns.despine(top=True, right=True)
+    plt.tight_layout()
+    plt.savefig(f"{df_name}.png")
+    plt.show()
