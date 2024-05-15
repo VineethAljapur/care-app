@@ -66,7 +66,7 @@ def analyze_bleb(contour: np.ndarray) -> dict:
     }
 
 
-def display_blebs(bleb_array: np.ndarray) -> None:
+def display_blebs(original_frame: np.ndarray, bleb_array: np.ndarray) -> None:
     """
     Display the blebs on an image.
 
@@ -94,8 +94,17 @@ def display_blebs(bleb_array: np.ndarray) -> None:
             text_thickness = 2 
             cv2.putText(display_image, str(bleb_number), (x, y - 5), font, font_scale, (255, 255, 255), text_thickness)
             bleb_number += 1
-            
-    plt.imshow(display_image)
+
+    fig, (ax1, ax2, ax3) = plt.subplots(1, 3)
+    ax1.imshow(original_frame)
+    ax1.set_title('Original Frame')
+    ax1.axis('off')
+    ax2.imshow(bleb_array)
+    ax2.set_title('Frame with Blebs')
+    ax2.axis('off')
+    ax3.imshow(display_image)
+    ax3.set_title('Individual Blebs')
+    ax3.axis('off')
     plt.show()
 
 
@@ -119,7 +128,7 @@ def write_to_excel(filename: str, data_dicts: List[Dict[str, List[Any]]], sheet_
             df_temp.to_excel(writer, sheet_name=sheet_names[i], index=False)
 
 
-def make_box_plot_with_significance(df: List[Dict[str, List[Any]]], df_name: str) -> None:
+def make_box_plot_with_significance(df: List[Dict[str, List[Any]]], df_name: str, save_fig=False) -> None:
     """
     Generate a box plot with significance levels for the given data.
 
@@ -168,5 +177,6 @@ def make_box_plot_with_significance(df: List[Dict[str, List[Any]]], df_name: str
     
     sns.despine(top=True, right=True)
     plt.tight_layout()
-    plt.savefig(f"{df_name}.png")
+    if save_fig:
+        plt.savefig(f"{df_name}.png")
     plt.show()
